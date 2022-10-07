@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Traits\HostNames;
 use Exception;
 use Http;
 use Illuminate\Http\JsonResponse;
@@ -13,32 +12,37 @@ use Validator;
 class AuthController extends Controller
 {
 
-    use HostNames;
+    public function users_Ms()
+    {
+        return "http://127.0.0.1:8001/api";
+    }
+
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'email' => 'required',
             'password' => 'required'
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return new JsonResponse([
                 'status' => false,
-                'message'=> $validator->errors()
-            ],400);
+                'message' => $validator->errors()
+            ], 400);
         }
 
-        try{
-          return  Http::post($this->getUsers_MS().'/login',[
+        try {
+            return  Http::post($this->users_MS() . '/login', [
                 'email' => $request['email'],
                 'password' => $request['password']
-            ]);
-        }catch(Exception $e){
+            ])->json();
+        } catch (Exception $e) {
 
             return new JsonResponse([
                 'status' => false,
-                'message'=> $e->getMessage()
-            ],500);
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
+
 }

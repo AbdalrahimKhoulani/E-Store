@@ -27,5 +27,19 @@ Route::middleware('auth:sanctum')
 Route::post('/register', [UserController::class, 'store']);
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::resource('/users', UserController::class)
-    ->middleware('auth:sanctum');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('/users')->controller(UserController::class)->group(function () {
+
+        Route::middleware('checkAdmin')
+            ->get('/index', 'index');
+
+        Route::put('/{id}/update', 'update');
+
+        Route::delete('/{id}/delete','destroy');
+
+        Route::get('/{id}/show','show');
+
+        Route::get('/get-authenticated-user','getAuthenticatedUser');
+
+    });
+});

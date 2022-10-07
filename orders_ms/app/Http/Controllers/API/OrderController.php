@@ -8,6 +8,7 @@ use App\Models\OrderDetails;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Validator;
 
 class OrderController extends Controller
 {
@@ -18,15 +19,15 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $orders = Order::select(['date','status','id'])
-        ->with(['user','orderDetails.product'])
-        ->get();
+        $orders = Order::select(['date', 'status', 'id', 'user_id'])
+            ->with(['user', 'orderDetails.product'])
+            ->get();
 
         return new JsonResponse([
-            'status'=>true,
-            'message'=>'Orders retrieved successfully',
-            'data'=>$orders
-        ],200);
+            'status' => true,
+            'message' => 'Orders retrieved successfully',
+            'data' => $orders
+        ], 200);
     }
 
     /**
@@ -37,30 +38,37 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'user_id'=>'required',
-            'date'=>'required',
-            'products'=>'required|array'
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required',
+            'date' => 'required',
+            'products' => 'required|array'
         ]);
-// dd($request);
-        $order = Order::create($request->all() + ['status'=> 'PROCESSING']);
 
-        foreach($request['products'] as $product){
-           // dd($product['id']);
+        if ($validator->fails()) {
+            return new JsonResponse([
+                'status' => false,
+                'message' => $validator->errors()
+            ], 500);
+        }
+
+        $order = Order::create($request->all() + ['status' => 'PROCESSING']);
+
+        foreach ($request['products'] as $product) {
+            // dd($product['id']);
             OrderDetails::create([
-               'product_id'=> $product['id'],
-            //    'user_id'=>Auth::id()
-                'user_id'=>$request['user_id'],
-                'order_id'=>$order->id,
+                'product_id' => $product['id'],
+                //    'user_id'=>Auth::id()
+                'user_id' => $request['user_id'],
+                'order_id' => $order->id,
                 'amount' => $product['amount']
             ]);
         }
 
         return new JsonResponse([
-            'status'=>true,
-            'message'=>'Order created successfully',
-            'data'=>$order
-        ],201);
+            'status' => true,
+            'message' => 'Order created successfully',
+            'data' => $order
+        ], 201);
     }
 
     /**
@@ -71,21 +79,21 @@ class OrderController extends Controller
      */
     public function show($id)
     {
-        $order = Order::select(['date','status','id'])
-        ->with(['user','orderDetails'])
-        ->where('id','=',$id)
-        ->get();
-        if($order == null){
+        $order = Order::select(['date', 'status', 'id', 'user_id'])
+            ->with(['user', 'orderDetails'])
+            ->where('id', '=', $id)
+            ->first();
+        if ($order == null) {
             return new JsonResponse([
-                'status'=>false,
-                'message'=>'No order with id '.$id,
-            ],404);
+                'status' => false,
+                'message' => 'No order with id ' . $id,
+            ], 404);
         }
         return new JsonResponse([
-            'status'=>true,
-            'message'=>'Order retrieved successfully',
-            'data'=>$order
-        ],200);
+            'status' => true,
+            'message' => 'Order retrieved successfully',
+            'data' => $order
+        ], 200);
     }
 
     /**
@@ -98,34 +106,25 @@ class OrderController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'date'=>'required'
+            'date' => 'required'
         ]);
-        
+
         $order = Order::find($id);
-        if($order == null){
+        if ($order == null) {
             return new JsonResponse([
-                'status'=>false,
-                'message'=>'No order with id '.$id,
-            ],404);
+                'status' => false,
+                'message' => 'No order with id ' . $id,
+            ], 404);
         }
 
-        // foreach($request['products'] as $productDetails){
-        //     //  dd($productDetails['id']);
-        //      OrderDetails::where([
-        //         'order_id'=>$request['order_id'],
-        //         'product_id'=>$productDetails['id']]
-        //         )->update($productDetails);
-        //  }
 
-         $order->update($request->all());
-        // $order->orderDetails()->update($request['products']);
+        $order->update($request->all());
 
         return new JsonResponse([
-            'status'=>true,
-            'message'=>'Order updated successfully',
-            'data'=>$order
-        ],200);
-
+            'status' => true,
+            'message' => 'Order updated successfully',
+            'data' => $order
+        ], 200);
     }
 
     /**
@@ -137,18 +136,18 @@ class OrderController extends Controller
     public function destroy($id)
     {
         $order = Order::find($id);
-        if($order == null){
+        if ($order == null) {
             return new JsonResponse([
-                'status'=>false,
-                'message'=>'No order with id '.$id,
-            ],404);
+                'status' => false,
+                'message' => 'No order with id ' . $id,
+            ], 404);
         }
 
         $order->delete();
-        OrderDetails::where('order_id','=',$id)->delete();
+        OrderDetails::where('order_id', '=', $id)->delete();
         return new JsonResponse([
-            'status'=>true,
-            'message'=>'Order deleted successfully',
-        ],204);
+            'status' => true,
+            'message' => 'Order deleted successfully',
+        ], 204);
     }
 }

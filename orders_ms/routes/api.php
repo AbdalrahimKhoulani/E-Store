@@ -47,3 +47,4 @@ Route::post('/users/store', [UserController::class, 'store']);
 
 Route::middleware('checkCustomer')
     ->apiResource('/users', UserController::class);
+

@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Http;
 
 class CheckAdmin
 {
-    use Helper;
+    public function users_MS(){
+        return 'http://127.0.0.1:8001/users';
+    }
     /**
      * Handle an incoming request.
      *
@@ -24,7 +26,7 @@ class CheckAdmin
         ->withHeaders([
             'Accept' => 'application/json'
         ])
-        ->get($this->getUsers_MS().'/check/is-admin');
+        ->get($this->users_MS().'/check/is-admin');
 
         if($response->status()==200){
         return $next($request);

@@ -1,0 +1,4 @@
+api_gateway : 8000
+users_ms : 8001
+products_ms : 8002
+orders_ms : 8003

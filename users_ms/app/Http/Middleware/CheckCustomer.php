@@ -19,6 +19,7 @@ class CheckCustomer
      */
     public function handle(Request $request, Closure $next)
     {
+
         $user = User::find(Auth::id());
 
         if ($user != null && $user->isCustomer()) {

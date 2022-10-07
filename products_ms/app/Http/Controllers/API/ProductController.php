@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Storage;
 use App\Traits\HostNames;
 use Log;
+use Validator;
 
 class ProductController extends Controller
 {
@@ -42,7 +43,7 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(),[
             'name' => 'required',
             'description' => 'required',
             'price' => 'required',
@@ -51,11 +52,19 @@ class ProductController extends Controller
             'category_id' => 'required'
         ]);
 
+        if($validator->fails()){
+            return new JsonResponse([
+                'status' => false,
+                'message' => $validator->errors()
+            ], 500);
+        }
+
 
         $imageName = Str::random() . '.' . $request->image->getClientOriginalExtension();
         Storage::disk('public')->putFileAs('products/image', $request->image, $imageName);
 
         $product = Product::create($request->post() + ['image' => "products/image/${imageName}"]);
+
 
         Http::
             // attach('image', file_get_contents($request['image']))->
@@ -72,6 +81,7 @@ class ProductController extends Controller
             )->json();
 
         //TODO: PIPLINE
+
 
         return new JsonResponse([
             'status' => true,
@@ -147,9 +157,7 @@ class ProductController extends Controller
             $product->category_id = $request['category_id'];
             $data['category_name'] =  $product->category->name;
         }
-        error_log('1');
         if ($request->image) {
-            error_log('2');
             $exists =   Storage::disk('public')->exists('products/image/' . ($product->image));
             if ($exists) {
                 Storage::disk('public')->delete('products/image/' . ($product->image));
@@ -184,7 +192,6 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-
         $product = Product::find($id);
         if ($product == null) {
             return new JsonResponse([

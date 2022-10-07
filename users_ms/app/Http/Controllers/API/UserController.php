@@ -10,11 +10,16 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Traits\HostNames;
+use Auth;
 use Storage;
 use Validator;
 
 class UserController extends Controller
 {
+    public function order_MS()
+    {
+        return 'http://127.0.0.1:8003/api';
+    }
 
     // use HostNames;
 
@@ -49,7 +54,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'first_name' => 'required',
             'email' => 'required',
             'password' => 'required',
@@ -58,25 +63,35 @@ class UserController extends Controller
             'photo' => 'required',
             'role' => 'required'
         ]);
+        if ($validator->fails()) {
+            return new JsonResponse([
+                'status' => false,
+                'message' => $validator->errors(),
+            ], 500);
+        }
 
         $photoName = Str::random() . '.' . $request->photo->getClientOriginalExtension();
         Storage::disk('public')->putFileAs('users/photo', $request->photo, $photoName);
 
         $request['password'] = Hash::make($request['password']);
 
-        $user = User::create($request->post() + [
+        $user = User::create([
+            'first_name' => $request['first_name'],
+            'last_name' => $request['last_name'],
+            'email' => $request['email'],
+            'password' => $request['password'],
+            'phone_number' => $request['phone_number'],
+            'role' => $request['role'],
             'photo' => "users/photo/${photoName}"
         ]);
 
-        Http::post(
-            "http://127.0.0.1:8002/api/users/store",
+        Http::post( $this->order_MS()."/users/store",
             [
                 'id' => $user->id,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name
             ]
         );
-
 
         return new JsonResponse([
             'status' => true,
@@ -118,10 +133,9 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-
         $user = User::find($id);
 
-        $data=[];
+        $data = [];
 
         if ($user == null) {
             return new JsonResponse([
@@ -167,8 +181,7 @@ class UserController extends Controller
         $user->save();
 
         $data['id'] = $user->id;
-       $response = Http::put('http://127.0.0.1:8002/api/users/'.$user->id,$data);
-       dd($response);
+        Http::put($this->order_MS() .'/users/'. $user->id, $data);
 
 
         return new JsonResponse([
@@ -197,11 +210,16 @@ class UserController extends Controller
 
         $user->delete();
 
-        Http::delete('http://127.0.0.1:8002/api/users/'.$user->id);
+        Http::delete($this->order_MS().'/users/' . $user->id);
 
         return new JsonResponse([
             'status' => true,
             'message' => 'User deleted successfully'
         ], 200);
+    }
+
+    public function getAuthenticatedUser()
+    {
+        return Auth::user();
     }
 }

@@ -97,7 +97,7 @@ class CategoryController extends Controller
 
         return new JsonResponse([
             'status' => true,
-            'message' => 'New category added successfully',
+            'message' => 'New category updated successfully',
             'data' => $category
         ], 200);
     }

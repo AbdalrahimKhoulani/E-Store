@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Http;
 
 class CheckCustomer
 {
-    use Helper;
+    public function users_MS(){
+        return 'http://127.0.0.1:8001/api/users';
+    }
     /**
      * Handle an incoming request.
      *
@@ -24,7 +26,7 @@ class CheckCustomer
         ->withHeaders([
             'Accept' => 'application/json'
         ])
-        ->get($this->getUsers_MS().'/check/is-customer');
+        ->get($this->users_MS().'/check/is-customer');
 
         if($response->status()==200){
         return $next($request);
